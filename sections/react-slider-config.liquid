@@ -9,6 +9,10 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
 <script>
+  // Verificar que React se carga
+  console.log('React disponible:', typeof React !== 'undefined');
+  console.log('ReactDOM disponible:', typeof ReactDOM !== 'undefined');
+
   // Configuración de la app React
   const SliderConfigApp = () => {
     const [config, setConfig] = React.useState({
@@ -258,9 +262,98 @@
     );
   };
 
-  // Montar la app React
-  const root = ReactDOM.createRoot(document.getElementById('slider-config-app'));
-  root.render(React.createElement(SliderConfigApp));
+  // Función para inicializar React
+  function initializeReactApp() {
+    console.log('Intentando montar React...');
+
+    // Verificar que el elemento existe
+    const appElement = document.getElementById('slider-config-app');
+    console.log('Elemento encontrado:', appElement);
+
+    if (appElement && typeof ReactDOM !== 'undefined') {
+      try {
+        const root = ReactDOM.createRoot(appElement);
+        root.render(React.createElement(SliderConfigApp));
+        console.log('React montado exitosamente');
+      } catch (error) {
+        console.error('Error al montar React:', error);
+        // Fallback: mostrar contenido básico
+        appElement.innerHTML = `
+          <h1>Configurador de Slider (Fallback)</h1>
+          <p>Error al cargar React. Mostrando versión básica.</p>
+          <div class="config-form">
+            <div class="form-group">
+              <label>Título:</label>
+              <input type="text" id="title-input" value="Mi Slider">
+            </div>
+            <button onclick="saveBasicConfig()">Guardar</button>
+          </div>
+        `;
+      }
+    } else {
+      console.error('No se pudo encontrar el elemento o React no está disponible');
+      if (appElement) {
+        appElement.innerHTML = '<p>Error: React no está disponible</p>';
+      }
+    }
+  }
+
+  // Inicializar cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeReactApp);
+  } else {
+    initializeReactApp();
+  }
+
+  // Escuchar eventos del theme editor
+  document.addEventListener('shopify:section:load', function (event) {
+    console.log('Sección cargada:', event.detail);
+    // Inicializar para cualquier sección que contenga nuestro elemento
+    setTimeout(initializeReactApp, 100);
+  });
+
+  // También escuchar cuando se selecciona la sección
+  document.addEventListener('shopify:section:select', function (event) {
+    console.log('Sección seleccionada:', event.detail);
+    // Inicializar para cualquier sección
+    setTimeout(initializeReactApp, 100);
+  });
+
+  // Escuchar cambios en el DOM (para cuando se agregan secciones dinámicamente)
+  const observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType === 1 && node.querySelector && node.querySelector('#slider-config-app')) {
+            console.log('Elemento React detectado en DOM');
+            setTimeout(initializeReactApp, 100);
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Función de fallback
+  function saveBasicConfig() {
+    const title = document.getElementById('title-input').value;
+    localStorage.setItem(
+      'slider-config',
+      JSON.stringify({
+        title: title,
+        autoplay: true,
+        speed: 3000,
+        primaryColor: '#ffffff',
+        showArrows: true,
+        showPagination: false,
+      })
+    );
+    alert('Configuración guardada: ' + title);
+  }
 </script>
 
 {% schema %}
