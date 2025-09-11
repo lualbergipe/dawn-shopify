@@ -1,0 +1,172 @@
+{{ 'react-slider-config.css' | asset_url | stylesheet_tag }}
+
+<div id="slider-config-app">
+  <!-- La app React se montará aquí -->
+</div>
+
+<!-- Cargar React y la app -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@shopify/polaris@12.0.0/build/esm/index.js"></script>
+
+<script>
+  // Configuración de la app React
+  const SliderConfigApp = () => {
+    const [config, setConfig] = React.useState({
+      autoplay: true,
+      speed: 3000,
+      primaryColor: '#ffffff',
+      showArrows: true,
+      showPagination: false,
+      title: 'Mi Slider Personalizado',
+    });
+
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [message, setMessage] = React.useState({ type: '', text: '' });
+
+    React.useEffect(() => {
+      loadConfig();
+    }, []);
+
+    const loadConfig = () => {
+      const savedConfig = localStorage.getItem('slider-config');
+      if (savedConfig) {
+        setConfig(JSON.parse(savedConfig));
+      }
+    };
+
+    const saveConfig = async () => {
+      setIsLoading(true);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        localStorage.setItem('slider-config', JSON.stringify(config));
+        setMessage({ type: 'success', text: 'Configuración guardada exitosamente!' });
+        console.log('Configuración guardada:', config);
+      } catch (error) {
+        setMessage({ type: 'error', text: 'Error al guardar' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const updateConfig = (key, value) => {
+      setConfig((prev) => ({ ...prev, [key]: value }));
+    };
+
+    return React.createElement(
+      'div',
+      { className: 'react-app-container' },
+      React.createElement('h1', null, 'Configurador de Slider (React)'),
+
+      message.text &&
+        React.createElement(
+          'div',
+          {
+            className: `message ${message.type}`,
+          },
+          message.text
+        ),
+
+      React.createElement(
+        'div',
+        { className: 'config-form' },
+        React.createElement(
+          'div',
+          { className: 'form-group' },
+          React.createElement('label', null, 'Título:'),
+          React.createElement('input', {
+            type: 'text',
+            value: config.title,
+            onChange: (e) => updateConfig('title', e.target.value),
+          })
+        ),
+
+        React.createElement(
+          'div',
+          { className: 'form-group' },
+          React.createElement('label', null, 'Autoplay:'),
+          React.createElement('input', {
+            type: 'checkbox',
+            checked: config.autoplay,
+            onChange: (e) => updateConfig('autoplay', e.target.checked),
+          })
+        ),
+
+        React.createElement(
+          'div',
+          { className: 'form-group' },
+          React.createElement('label', null, `Velocidad: ${config.speed}ms`),
+          React.createElement('input', {
+            type: 'range',
+            min: 1000,
+            max: 10000,
+            step: 500,
+            value: config.speed,
+            onChange: (e) => updateConfig('speed', parseInt(e.target.value)),
+          })
+        ),
+
+        React.createElement(
+          'div',
+          { className: 'form-group' },
+          React.createElement('label', null, 'Color:'),
+          React.createElement('input', {
+            type: 'color',
+            value: config.primaryColor,
+            onChange: (e) => updateConfig('primaryColor', e.target.value),
+          })
+        ),
+
+        React.createElement(
+          'button',
+          {
+            onClick: saveConfig,
+            disabled: isLoading,
+            className: 'save-btn',
+          },
+          isLoading ? 'Guardando...' : 'Guardar Configuración'
+        )
+      ),
+
+      React.createElement(
+        'div',
+        { className: 'preview' },
+        React.createElement('h3', null, 'Vista Previa'),
+        React.createElement(
+          'div',
+          {
+            className: 'preview-slider',
+            style: {
+              background: `linear-gradient(45deg, ${config.primaryColor}, #f0f0f0)`,
+              height: '200px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#333',
+            },
+          },
+          config.title
+        )
+      )
+    );
+  };
+
+  // Montar la app React
+  const root = ReactDOM.createRoot(document.getElementById('slider-config-app'));
+  root.render(React.createElement(SliderConfigApp));
+</script>
+
+{% schema %}
+{
+  "name": "React Slider Config",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Título",
+      "default": "Configurador React"
+    }
+  ]
+}
+{% endschema %}
